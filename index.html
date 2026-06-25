@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>阳明心学咨询 · 修行人生</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #fdf9f0; }
+  .screen { display: none; }
+  .screen.active { display: flex; }
+  .ink-btn { background: #1a1a1a; color: #fff8e7; padding: 12px 24px; border-radius: 8px; }
+  .ink-btn:active { background: #333; }
+  .zh-card { background: #fff8e7; border: 1px solid #e8dcc0; border-radius: 12px; padding: 20px; }
+  textarea { resize: none; }
+  .spin { animation: spin 1.2s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .bamboo-tl { position: absolute; top: 8px; right: 8px; font-size: 11px; color: #2d5a3d; writing-mode: vertical-rl; letter-spacing: 2px; }
+  .sage-br { position: absolute; bottom: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle, #d4c5a0 30%, #8b7e5a 100%); opacity: 0.4; }
+  .red-highlight { color: #c0392b; font-weight: 600; }
+</style>
+</head>
+<body class="min-h-screen flex items-center justify-center">
+
+<div id="app" class="w-full max-w-md min-h-screen relative overflow-hidden">
+
+  <!-- 屏 1:输入框 -->
+  <div id="screen1" class="screen active flex-col p-6 pt-16 min-h-screen">
+    <div class="bamboo-tl">竹</div>
+    <div class="sage-br"></div>
+
+    <!-- ★ 付费墙:未付费显示 -->
+    <div id="paywall" class="hidden mb-4 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+      <div class="text-xs text-gray-600 mb-1">⚡ 免费体验已用 <span id="usedCount">0</span>/1 次</div>
+      <div class="text-sm font-bold text-gray-900 mb-2">加星球享无限次</div>
+      <div class="flex gap-2">
+        <button id="payMonthly" class="text-xs px-3 py-2 bg-black text-amber-50 rounded">19.9 元/月</button>
+        <button id="payYearly" class="text-xs px-3 py-2 bg-amber-100 text-gray-900 rounded border border-amber-300">199 元/年(省 40)</button>
+      </div>
+    </div>
+
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">心里堵得慌?</h1>
+    <p class="text-gray-600 mb-8 text-sm">说说看。阳明先生正在翻书。</p>
+    <textarea id="qInput" rows="6" class="w-full p-4 rounded-lg border-2 border-gray-300 focus:border-black focus:outline-none text-base bg-white" placeholder="例:我总拖延,知道要动但就是不动"></textarea>
+    <div class="mt-6 flex flex-wrap gap-2">
+      <button class="text-xs px-3 py-1.5 bg-white border border-gray-300 rounded-full quick-q">我执行难</button>
+      <button class="text-xs px-3 py-1.5 bg-white border border-gray-300 rounded-full quick-q">我内耗严重</button>
+      <button class="text-xs px-3 py-1.5 bg-white border border-gray-300 rounded-full quick-q">我跟对象总吵架</button>
+      <button class="text-xs px-3 py-1.5 bg-white border border-gray-300 rounded-full quick-q">我不敢辞职</button>
+    </div>
+    <button id="askBtn" class="ink-btn mt-8 w-full text-base">问阳明先生 →</button>
+    <div class="mt-4 text-center">
+      <button id="historyBtn" class="text-xs text-gray-500 underline">看历史问过</button>
+    </div>
+    <div id="historyBox" class="hidden mt-4 max-h-40 overflow-y-auto text-xs"></div>
+  </div>
+
+  <!-- 屏 2:AI 思考中 -->
+  <div id="screen2" class="screen flex-col items-center justify-center min-h-screen">
+    <div class="bamboo-tl">竹</div>
+    <div class="sage-br"></div>
+    <div class="spin text-6xl mb-6">📜</div>
+    <p class="text-xl text-gray-800 font-medium" id="thinkingText">阳明正在翻书…</p>
+    <p class="text-xs text-gray-500 mt-2" id="thinkingSub">在传习录里找对应的话</p>
+  </div>
+
+  <!-- 屏 3:3 段答案 -->
+  <div id="screen3" class="screen flex-col p-5 pt-12 min-h-screen">
+    <div class="bamboo-tl">竹</div>
+    <div class="sage-br"></div>
+    <div class="text-xs text-gray-500 mb-2" id="qEcho"></div>
+    <h2 class="text-xl font-bold text-gray-900 mb-4">阳明 3 段</h2>
+
+    <div class="zh-card mb-3">
+      <div class="text-xs text-gray-500 mb-1">▍病根</div>
+      <p id="segBinggen" class="text-sm text-gray-800 leading-relaxed"></p>
+    </div>
+
+    <div class="zh-card mb-3">
+      <div class="text-xs text-gray-500 mb-1">▍阳明说</div>
+      <p id="segYangming" class="text-base text-gray-900 leading-relaxed font-medium"></p>
+      <p id="segSrc" class="text-xs text-gray-400 mt-2"></p>
+    </div>
+
+    <div class="zh-card mb-4">
+      <div class="text-xs text-gray-500 mb-1">▍落地招</div>
+      <p id="segLuodi" class="text-sm text-gray-800 leading-relaxed"></p>
+    </div>
+
+    <div class="mt-3 text-center">
+      <button id="goCardBtn" class="ink-btn w-full">生成心学卡片 →</button>
+    </div>
+  </div>
+
+  <!-- 屏 4:阳明手绘卡片 -->
+  <div id="screen4" class="screen flex-col items-center p-5 pt-12 min-h-screen">
+    <div class="bamboo-tl">竹</div>
+    <div class="sage-br"></div>
+    <h2 class="text-lg font-bold text-gray-900 mb-4">保存这张卡片</h2>
+    <canvas id="cardCanvas" width="340" height="480" class="rounded-lg shadow-lg" style="background:#fdf6e3;"></canvas>
+    <div class="mt-4 w-full">
+      <button id="downloadBtn" class="ink-btn w-full">保存为图片</button>
+      <button id="goAskBtn" class="mt-2 w-full text-sm py-2 text-gray-600 underline">追问一句 →</button>
+    </div>
+  </div>
+
+  <!-- 屏 5:追问 -->
+  <div id="screen5" class="screen flex-col p-6 pt-16 min-h-screen">
+    <div class="bamboo-tl">竹</div>
+    <div class="sage-br"></div>
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">今晚做了告诉我</h1>
+    <p class="text-sm text-gray-600 mb-6">不用想太多,选最贴近的一句。</p>
+
+    <div class="space-y-3">
+      <button class="follow-btn w-full text-left p-4 zh-card" data-action="已做了,心里松了">已做了,心里松了</button>
+      <button class="follow-btn w-full text-left p-4 zh-card" data-action="做了但没感觉">做了但没感觉</button>
+      <button class="follow-btn w-full text-left p-4 zh-card" data-action="还是没动,下次再说">还是没动,下次再说</button>
+      <button class="follow-btn w-full text-left p-4 zh-card" data-action="换一题">换一题</button>
+    </div>
+
+    <div id="followHint" class="mt-6 text-xs text-gray-500 leading-relaxed"></div>
+  </div>
+
+</div>
+
+<script>
+// ====== ★ API URL 配置(部署到公网时改这里) ======
+const API_BASE = (() => {
+  // 本地开发用 127.0.0.1:5001
+  if (location.hostname === '127.0.0.1' || location.hostname === 'localhost') {
+    return 'http://127.0.0.1:5001';
+  }
+  // ★ 部署到 Vercel 后,改成 Railway API 公网 URL
+  // 例:'https://yangming-api.up.railway.app'
+  return 'https://web-production-72b32.up.railway.app';
+})();
+
+// ====== ★ 付费墙状态(localStorage 模拟) ======
+const PAID_KEY = 'w2_paid';
+const USED_KEY = 'w2_used_today';
+function isPaid() {
+  const p = localStorage.getItem(PAID_KEY);
+  if (!p) return false;
+  // 简化版:不验签,只验过期时间
+  try {
+    const until = JSON.parse(p).until || 0;
+    return Date.now() < until;
+  } catch { return false; }
+}
+function pay(months, price) {
+  const until = Date.now() + months * 30 * 24 * 3600 * 1000;
+  localStorage.setItem(PAID_KEY, JSON.stringify({ until, price, ts: Date.now() }));
+  alert('✅ 支付成功!\n\n(这是演示版,实际部署时跳到知识星球二维码)');
+  document.getElementById('paywall').classList.add('hidden');
+}
+document.getElementById('payMonthly').addEventListener('click', () => pay(1, 19.9));
+document.getElementById('payYearly').addEventListener('click', () => pay(12, 199));
+
+function checkPaywall() {
+  if (isPaid()) {
+    document.getElementById('paywall').classList.add('hidden');
+    return false;
+  }
+  // 看今天用了多少次
+  const today = new Date().toDateString();
+  const used = JSON.parse(localStorage.getItem(USED_KEY) || '{}');
+  const count = (used.date === today) ? used.count : 0;
+  if (count >= 1) {
+    document.getElementById('paywall').classList.remove('hidden');
+    document.getElementById('usedCount').textContent = count;
+    return true;  // 已超免费次数
+  }
+  document.getElementById('paywall').classList.add('hidden');
+  document.getElementById('usedCount').textContent = count;
+  return false;
+}
+function bumpUsed() {
+  const today = new Date().toDateString();
+  const used = JSON.parse(localStorage.getItem(USED_KEY) || '{}');
+  const count = (used.date === today) ? used.count + 1 : 1;
+  localStorage.setItem(USED_KEY, JSON.stringify({ date: today, count: count }));
+}
+checkPaywall();
+
+// ====== 状态 ======
+let currentAmmo = null;
+let currentQuestion = "";
+let lastAmmo = null;  // 屏 5 推后续弹药用
+
+// ====== 屏切换 ======
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ====== 屏 1 快捷问句 ======
+document.querySelectorAll('.quick-q').forEach(b => {
+  b.addEventListener('click', () => {
+    document.getElementById('qInput').value = b.textContent;
+  });
+});
+
+// ====== 屏 1 历史 ======
+function renderHistory() {
+  const box = document.getElementById('historyBox');
+  const hist = JSON.parse(localStorage.getItem('w2_history') || '[]');
+  if (hist.length === 0) {
+    box.innerHTML = '<div class="text-gray-400 p-2">还没有历史</div>';
+    return;
+  }
+  box.innerHTML = hist.slice(0, 10).map((h, i) =>
+    `<div class="p-2 border-b border-gray-100 cursor-pointer hover:bg-yellow-50" data-q="${h.q.replace(/"/g,'&quot;')}">${h.q}<span class="text-gray-400 text-[10px] ml-2">${h.time}</span></div>`
+  ).join('');
+  box.querySelectorAll('div[data-q]').forEach(d => {
+    d.addEventListener('click', () => { document.getElementById('qInput').value = d.dataset.q; });
+  });
+}
+document.getElementById('historyBtn').addEventListener('click', () => {
+  const box = document.getElementById('historyBox');
+  box.classList.toggle('hidden');
+  if (!box.classList.contains('hidden')) renderHistory();
+});
+
+function saveHistory(q) {
+  const hist = JSON.parse(localStorage.getItem('w2_history') || '[]');
+  hist.unshift({ q, time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) });
+  localStorage.setItem('w2_history', JSON.stringify(hist.slice(0, 50)));
+}
+
+// ====== 屏 1 → 屏 2 调 W1 API ======
+document.getElementById('askBtn').addEventListener('click', async () => {
+  const q = document.getElementById('qInput').value.trim();
+  if (!q) { alert('说点什么吧'); return; }
+  // ★ 付费墙检查
+  if (checkPaywall()) {
+    alert('免费体验已用完,加星球享无限次');
+    return;
+  }
+  currentQuestion = q;
+  saveHistory(q);
+  bumpUsed();
+  goTo('screen2');
+
+  // 屏 2 文案轮播
+  const texts = ['阳明正在翻书…', '找到了 7 个相关话段…', '挑出 5 条最适合你的…', '排列中…'];
+  let idx = 0;
+  const timer = setInterval(() => {
+    idx = (idx + 1) % texts.length;
+    document.getElementById('thinkingText').textContent = texts[idx];
+  }, 600);
+
+  try {
+    const r = await fetch(API_BASE + '/consult', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: q, top_k: 5 })
+    });
+    const data = await r.json();
+    clearInterval(timer);
+    lastAmmo = data.ammo;
+    currentAmmo = data.ammo[0];
+
+    // 屏 3 渲染(优先用 /compose 自动生成的 3 段;失败才用本地模板)
+    try {
+      const cr = await fetch(API_BASE + '/compose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q, ammo: data.ammo, oral_concepts: data.oral_concepts })
+      });
+      const comp = await cr.json();
+      document.getElementById('segBinggen').innerHTML = comp.root;
+      document.getElementById('segYangming').innerHTML = comp.yangming_quote;
+      document.getElementById('segSrc').textContent = `—《传习录》 ${data.oral_concepts.join(' / ')}`;
+      document.getElementById('segLuodi').innerHTML = comp.action;
+    } catch (e) {
+      // 兜底用本地模板
+      document.getElementById('segBinggen').innerHTML = makeBinggen(q, data.oral_concepts);
+      document.getElementById('segYangming').innerHTML = highlight(currentAmmo.first.split('\n')[0].slice(0, 80));
+      document.getElementById('segSrc').textContent = `—《传习录》${currentAmmo.seg}·${currentAmmo.no}  [${(currentAmmo._concepts_in_row || []).join('/')}]`;
+      document.getElementById('segLuodi').innerHTML = makeLuodi(q);
+    }
+
+    goTo('screen3');
+  } catch (e) {
+    clearInterval(timer);
+    alert('调不到 API,请检查 127.0.0.1:5001');
+    goTo('screen1');
+  }
+});
+
+// ====== 修哥味:病根 ======
+function makeBinggen(q, concepts) {
+  const c = concepts.join('+') || '心即理';
+  return `这事表面是"做不到",根子是<span class="red-highlight">${q.slice(0, 6)}</span>背后有个 <span class="red-highlight">知而不行</span> 的结。阳明说:<span class="red-highlight">未有知而不行者,知而不行,只是未知</span>。`;
+}
+
+// ====== 修哥味:落地招(基于弹药库找最贴的概念给一招)======
+function makeLuodi(q) {
+  const luodi = {
+    '我执行难': '今晚就 1 件 — 把手机扔客厅,桌面清空,开 25 分钟闹钟。动起来 5 分钟,大脑就懒得停了。',
+    '我总拖延': '把那件最不想干的事切成 3 段,先干第 1 段 5 分钟。心里那个"等会再说"会立刻被打破。',
+    '我内耗严重': '拿张纸写下让你内耗的事,逐条问自己:"这事 3 天后还重要吗?" 大部分答案都是不。',
+    '我不敢辞职': '今晚别下决定。先把简历写好挂到 Boss,看有没有面试。手里有选择,心里就有底。',
+    '我跟对象总吵架': '今晚她/他说啥,你只回一句:"你刚才说的,我听到了。" 情绪先接住,道理后面再说。',
+    '孩子厌学怎么办': '今晚别问学习,问孩子今天最开心的事。关系顺了,学习才有地儿放。',
+    '我最近很焦虑': '把让你焦虑的事写下来,分两类:能做的,不能的。能做的做一件,不能的删掉。',
+    '我控制不住情绪': '情绪上来那一秒,先闭嘴 10 秒。数 10 个数,情绪就降一半。',
+  };
+  for (const k in luodi) {
+    if (q.includes(k.replace('怎么办','').replace('不敢','')) || q === k) return luodi[k];
+  }
+  return '今晚就 1 件 — 把你纠结的事写下来,逐条问自己:"这事 3 天后还重要吗?" 选最重要的做一件,别想整套。';
+}
+
+// ====== 红色高亮关键词 ======
+function highlight(text) {
+  const keys = ['心即理', '致良知', '知行合一', '格物', '省察', '事上磨练', '良知', '天理', '知是行之始', '未有知而不行者'];
+  keys.forEach(k => {
+    text = text.replaceAll(k, `<span class="red-highlight">${k}</span>`);
+  });
+  return text;
+}
+
+// ====== 屏 3 → 屏 4 画卡片 ======
+document.getElementById('goCardBtn').addEventListener('click', () => {
+  drawCard();
+  goTo('screen4');
+});
+
+function drawCard() {
+  const c = document.getElementById('cardCanvas').getContext('2d');
+  const W = 340, H = 480;
+  c.clearRect(0, 0, W, H);
+  // 米白底
+  c.fillStyle = '#fdf6e3';
+  c.fillRect(0, 0, W, H);
+  // 边框
+  c.strokeStyle = '#d4c5a0';
+  c.lineWidth = 2;
+  c.strokeRect(8, 8, W-16, H-16);
+  // 右上角竹
+  c.fillStyle = '#2d5a3d';
+  c.font = '14px "STKaiti", "KaiTi", serif';
+  c.fillText('🎋 竹', W-50, 30);
+  // 标题
+  c.fillStyle = '#1a1a1a';
+  c.font = 'bold 22px "STKaiti", "KaiTi", serif';
+  c.fillText('阳明先生说', 30, 60);
+  // 弹药原文
+  c.fillStyle = '#1a1a1a';
+  c.font = '17px "STKaiti", "KaiTi", serif';
+  const lines = wrapText(c, currentAmmo.first.replace(/\n/g, ' '), W-60);
+  let y = 100;
+  lines.slice(0, 8).forEach(line => {
+    c.fillText(line, 30, y);
+    y += 28;
+  });
+  // 红色高亮关键词
+  c.fillStyle = '#c0392b';
+  c.font = 'bold 16px "STKaiti", "KaiTi", serif';
+  c.fillText('— ' + (currentAmmo._concepts_in_row || ['心即理'])[0], 30, y + 30);
+  // 来源
+  c.fillStyle = '#888';
+  c.font = '12px sans-serif';
+  c.fillText(`《传习录》${currentAmmo.seg}·${currentAmmo.no}`, 30, H-50);
+  c.fillText('— 修行人生 · 弹药库', 30, H-30);
+  // 右下角古人头像
+  c.fillStyle = '#8b7e5a';
+  c.beginPath();
+  c.arc(W-40, H-40, 18, 0, Math.PI*2);
+  c.fill();
+  c.fillStyle = '#d4c5a0';
+  c.beginPath();
+  c.arc(W-40, H-42, 14, 0, Math.PI*2);
+  c.fill();
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split('');
+  const lines = [];
+  let line = '';
+  for (let n = 0; n < words.length; n++) {
+    const test = line + words[n];
+    const m = ctx.measureText(test);
+    if (m.width > maxWidth && line.length > 0) {
+      lines.push(line);
+      line = words[n];
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+// ====== 屏 4 下载 ======
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = '阳明先生说_' + Date.now() + '.png';
+  link.href = document.getElementById('cardCanvas').toDataURL('image/png');
+  link.click();
+});
+
+// ====== 屏 4 → 屏 5 ======
+document.getElementById('goAskBtn').addEventListener('click', () => {
+  goTo('screen5');
+  document.getElementById('followHint').innerHTML = '';
+});
+
+// ====== 屏 5 反馈按钮 ======
+document.querySelectorAll('.follow-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    const a = b.dataset.action;
+    if (a === '换一题') { goTo('screen1'); return; }
+
+    // 修哥味反馈
+    const hints = {
+      '已做了,心里松了': '<span class="red-highlight">这就对了。</span>阳明说的"知行合一"就是这么来的 — 动了才知道原来没那么难。下次再卡住,记得:第一步永远最贵。',
+      '做了但没感觉': '正常。心里的结要动几次才能松。今晚做了,这事就过去了 30%。明晚再做一次,过 60%。',
+      '还是没动,下次再说': '<span class="red-highlight">没动没关系,别骂自己。</span>阳明说"未发之中",不动的当下,你知道该动,这就已经在动了 — 把今天存着,明晚再试。'
+    };
+    document.getElementById('followHint').innerHTML = (hints[a] || '') + '<br><br><button class="ink-btn mt-3" onclick="goTo(\'screen1\')">换一题 →</button>';
+  });
+});
+
+</script>
+</body>
+</html>
