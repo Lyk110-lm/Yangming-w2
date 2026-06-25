@@ -18,9 +18,9 @@ COPY search_concepts.py .
 COPY oral_to_concept.json .
 COPY entries.db .
 
-# Railway 注入 PORT,默认 8000 兜底
+# 端口(Railway 会注入 $PORT,默认 8000 兜底)
 ENV PORT=8000
 EXPOSE 8000
 
-# exec 形式(不用 shell),直接传端口号 8000,Railway 会自动覆盖 PORT env
-CMD ["uvicorn", "api_consult:app", "--host", "0.0.0.0", "--port", "8000"]
+# shell 形式,让 sh 解析 $PORT
+CMD uvicorn api_consult:app --host 0.0.0.0 --port ${PORT:-8000}
